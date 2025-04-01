@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation Interactive des Cellules</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        #content-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            max-width: 800px;
+        }
+        #console-container {
+            width: 100%;
+        }
+        #console {
+            width: 100%;
+            height: 300px;
+            background: black;
+            color: lime;
+            font-family: monospace;
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #cellule-container {
+            width: 350px;
+            height: 350px;
+            background: #fff;
+            border-radius: 50%;
+            border: 5px solid black;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin-top: 20px;
+        }
+        .organite {
+            position: absolute;
+            border-radius: 50%;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+        #noyau {
+            width: 100px;
+            height: 100px;
+            background: rgba(128, 0, 128, 0.7);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #mitochondrie {
+            width: 50px;
+            height: 25px;
+            background: rgba(255, 0, 0, 0.7);
+            top: 20%;
+            left: 20%;
+        }
+        #ribosome {
+            width: 15px;
+            height: 15px;
+            background: rgba(255, 165, 0, 0.7);
+            top: 65%;
+            left: 70%;
+        }
+        #quiz-question {
+            position: absolute;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Simulation Interactive des Cellules</h1>
+
+    <div id="content-container">
+        <div id="console-container">
+            <div id="console">Bienvenue ! Tapez une commande pour explorer la cellule.</div>
+            <input type="text" id="commandInput" placeholder="Entrez une commande et appuyez sur Entrée">
+        </div>
+
+        <div id="cellule-container">
+            <div id="noyau" class="organite"></div>
+            <div id="mitochondrie" class="organite"></div>
+            <div id="ribosome" class="organite"></div>
+            <div id="quiz-question">Cellule Eucaryote</div>
+        </div>
+    </div>
+
+    <script>
+        const consoleDiv = document.getElementById("console");
+        const commandInput = document.getElementById("commandInput");
+        const quizQuestionDiv = document.getElementById("quiz-question");
+
+        let quizEnCours = null;
+        const quizOptions = [
+            { question: "Où se trouve l'ADN chez les procaryotes ?", answer: "Cytosol", info: "Chez les procaryotes, l'ADN est libre dans le cytoplasme." },
+            { question: "Quel organite est responsable de la respiration cellulaire ?", answer: "Mitochondrie", info: "La mitochondrie est le centre énergétique de la cellule." },
+            { question: "Quel est le principal composant de la membrane plasmique ?", answer: "Phospholipides", info: "La membrane plasmique est constituée de phospholipides et de protéines." },
+            { question: "Comment s'appelle la division cellulaire des cellules somatiques ?", answer: "Mitose", info: "La mitose permet de produire deux cellules filles identiques à la cellule mère." },
+            { question: "Quel organite est chargé de la synthèse des protéines ?", answer: "Ribosome", info: "Les ribosomes traduisent l'ARNm en protéines." },
+            { question: "Quel organite est le 'centre de commande' de la cellule ?", answer: "Noyau", info: "Le noyau contient l'ADN et contrôle l'activité de la cellule." }
+        ];
+
+        function printToConsole(text) {
+            consoleDiv.innerHTML += "<br> > " + text;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function startQuiz() {
+            quizEnCours = quizOptions[Math.floor(Math.random() * quizOptions.length)];
+            quizQuestionDiv.innerText = quizEnCours.question;
+            printToConsole("Répondez avec : réponse [votre réponse] ou tapez 'indice' pour voir la réponse.");
+        }
+
+        function checkAnswer(answer) {
+            if (quizEnCours && answer.toLowerCase() === quizEnCours.answer.toLowerCase()) {
+                printToConsole("Bonne réponse ! " + quizEnCours.info);
+                quizQuestionDiv.innerText = "Bonne réponse !";
+                quizEnCours = null;
+            } else {
+                printToConsole("Mauvaise réponse. Essayez encore ou tapez 'indice' pour voir la réponse.");
+            }
+        }
+
+        commandInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                let command = commandInput.value.toLowerCase();
+                commandInput.value = "";
+
+                if (command.startsWith("réponse ")) {
+                    checkAnswer(command.replace("réponse ", ""));
+                } else if (command === "indice" && quizEnCours) {
+                    printToConsole("Indice : La réponse est " + quizEnCours.answer);
+                } else {
+                    switch (command) {
+                        case "quiz":
+                            startQuiz();
+                            break;
+                        case "help":
+                            printToConsole("Commandes : quiz, réponse [réponse], indice");
+                            break;
+                        default:
+                            printToConsole("Commande inconnue. Tapez 'help' pour voir les commandes.");
+                    }
+                }
+            }
+        });
+
+        printToConsole("Taper 'quiz' pour commencer un quizz !");
+    </script>
+
+</body>
+</html>

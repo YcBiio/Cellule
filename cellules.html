@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Animation interactive de cellule</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+      font-family: sans-serif;
+    }
+    /* Conteneur général */
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Sélecteur de type de cellule */
+    #cellTypeSelector {
+      margin-bottom: 20px;
+      font-size: 16px;
+      padding: 5px;
+    }
+    /* La cellule (membrane) */
+    .cell {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      border: 5px solid #2ecc71;
+      border-radius: 50%;
+      background: rgba(46, 204, 113, 0.1);
+      animation: pulse 3s infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+    /* --- Style pour la cellule Eucaryote --- */
+    /* Noyau */
+    .nucleus {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 150px;
+      height: 150px;
+      background: #3498db;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      animation: rotate 10s linear infinite;
+      cursor: pointer;
+    }
+    @keyframes rotate {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    /* Mitochondries */
+    .mitochondrion {
+      position: absolute;
+      width: 50px;
+      height: 30px;
+      background: #e74c3c;
+      border-radius: 20px;
+      animation: move 4s ease-in-out infinite;
+      cursor: pointer;
+    }
+    @keyframes move {
+      0%   { transform: translate(0, 0); }
+      50%  { transform: translate(20px, -20px); }
+      100% { transform: translate(0, 0); }
+    }
+    .mito1 { top: 20%; left: 70%; }
+    .mito2 { top: 70%; left: 20%; }
+    .mito3 { top: 75%; left: 65%; }
+    /* Réticulum endoplasmique */
+    .er {
+      position: absolute;
+      width: 120px;
+      height: 60px;
+      background: #f39c12;
+      border-radius: 50px / 30px;
+      top: 65%;
+      left: 60%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      animation: er-move 6s ease-in-out infinite;
+    }
+    @keyframes er-move {
+      0%   { transform: translate(-50%, -50%) rotate(0deg); }
+      50%  { transform: translate(-50%, -50%) rotate(10deg); }
+      100% { transform: translate(-50%, -50%) rotate(0deg); }
+    }
+    /* Appareil de Golgi */
+    .golgi {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      background: #9b59b6;
+      border-radius: 10px;
+      top: 30%;
+      left: 20%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      animation: golgi-move 5s ease-in-out infinite;
+    }
+    @keyframes golgi-move {
+      0%   { transform: translate(-50%, -50%) scale(1); }
+      50%  { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+    /* --- Style pour la cellule Procaryote --- */
+    /* Nucleoid */
+    .nucleoid {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100px;
+      height: 70px;
+      background: #8e44ad;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+    }
+    /* Ribosomes (petits cercles) */
+    .ribosome {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      background: #c0392b;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .ribo1 { top: 30%; left: 70%; }
+    .ribo2 { top: 60%; left: 20%; }
+    .ribo3 { top: 80%; left: 60%; }
+    /* Tooltips */
+    .tooltip {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #ccc;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+      white-space: nowrap;
+      display: none;
+      z-index: 10;
+    }
+    .tooltip.active {
+      display: block;
+    }
+    /* Zone de description */
+    #description {
+      max-width: 500px;
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <!-- Sélecteur de type de cellule -->
+    <select id="cellTypeSelector">
+      <option value="eukaryote">Cellule Eucaryote</option>
+      <option value="procaryote">Cellule Procaryote</option>
+    </select>
+    
+    <!-- Conteneur où la cellule sera chargée -->
+    <div id="cellContainer"></div>
+    
+    <!-- Zone de description -->
+    <div id="description"></div>
+  </div>
+  
+  <script>
+    // Templates pour chaque type de cellule
+    const templates = {
+      eukaryote: {
+        html: `
+          <div class="cell" id="cell">
+            <!-- Noyau -->
+            <div class="nucleus" id="nucleus"></div>
+            <!-- Mitochondries -->
+            <div class="mitochondrion mito1" id="mito1"></div>
+            <div class="mitochondrion mito2" id="mito2"></div>
+            <div class="mitochondrion mito3" id="mito3"></div>
+            <!-- Réticulum endoplasmique -->
+            <div class="er" id="er"></div>
+            <!-- Appareil de Golgi -->
+            <div class="golgi" id="golgi"></div>
+            
+            <!-- Tooltips -->
+            <div class="tooltip" id="tooltip-nucleus" style="top: 10%; left: 50%;">
+              <strong>Noyau</strong> : Contient l'ADN et régule toutes les activités cellulaires (réplication, transcription).
+            </div>
+            <div class="tooltip" id="tooltip-mito1" style="top: 0%; left: 80%;">
+              <strong>Mitochondrie</strong> : Produit l'énergie (ATP) via la respiration cellulaire.
+            </div>
+            <div class="tooltip" id="tooltip-mito2" style="top: 80%; left: 0%;">
+              <strong>Mitochondrie</strong> : Centrale énergétique de la cellule.
+            </div>
+            <div class="tooltip" id="tooltip-mito3" style="top: 85%; left: 75%;">
+              <strong>Mitochondrie</strong> : Impliquée dans l'apoptose et la production d'ATP.
+            </div>
+            <div class="tooltip" id="tooltip-er" style="top: 75%; left: 70%;">
+              <strong>Réticulum endoplasmique</strong> : Synthèse des lipides et maturation des protéines.
+            </div>
+            <div class="tooltip" id="tooltip-golgi" style="top: 20%; left: 10%;">
+              <strong>Appareil de Golgi</strong> : Trie, modifie et exporte les protéines et lipides.
+            </div>
+          </div>
+        `,
+        description: `
+          <h2>Explication de la cellule eucaryote</h2>
+          <p>
+            La cellule eucaryote est l'unité de base des organismes vivants complexes. 
+            Elle possède un <strong>noyau</strong> délimité par une double membrane qui renferme l'information génétique (ADN), 
+            et divers organites spécialisés :
+          </p>
+          <ul>
+            <li><strong>Mitochondries</strong> : Produisent l'ATP, indispensable au fonctionnement de la cellule.</li>
+            <li><strong>Réticulum endoplasmique (RE)</strong> : Impliqué dans la synthèse des lipides et la maturation des protéines.</li>
+            <li><strong>Appareil de Golgi</strong> : Trie et expédie les protéines/lipides vers leur destination.</li>
+          </ul>
+          <p>
+            Grâce à ces organites, la cellule eucaryote peut accomplir des fonctions complexes : 
+            production d’énergie, synthèse de molécules, transport et sécrétion, etc.
+          </p>
+        `
+      },
+      procaryote: {
+        html: `
+          <div class="cell" id="cell">
+            <!-- Nucleoid -->
+            <div class="nucleoid" id="nucleoid"></div>
+            <!-- Ribosomes -->
+            <div class="ribosome ribo1" id="ribo1"></div>
+            <div class="ribosome ribo2" id="ribo2"></div>
+            <div class="ribosome ribo3" id="ribo3"></div>
+            
+            <!-- Tooltips -->
+            <div class="tooltip" id="tooltip-nucleoid" style="top: 10%; left: 50%;">
+              <strong>Nucleoid</strong> : Zone contenant l'ADN circulaire, sans membrane nucléaire.
+            </div>
+            <div class="tooltip" id="tooltip-ribo1" style="top: 35%; left: 75%;">
+              <strong>Ribosome</strong> : Site de synthèse des protéines.
+            </div>
+            <div class="tooltip" id="tooltip-ribo2" style="top: 65%; left: 25%;">
+              <strong>Ribosome</strong> : Convertit l'ARN messager en protéines.
+            </div>
+            <div class="tooltip" id="tooltip-ribo3" style="top: 85%; left: 65%;">
+              <strong>Ribosome</strong> : Fabrique les chaînes d'acides aminés (polypeptides).
+            </div>
+          </div>
+        `,
+        description: `
+          <h2>Explication de la cellule procaryote</h2>
+          <p>
+            La cellule procaryote est plus simple et souvent plus petite qu'une cellule eucaryote. 
+            Elle ne possède pas de noyau : son ADN est concentré dans une région appelée <strong>nucleoid</strong>.
+          </p>
+          <p>
+            Les <strong>ribosomes</strong> (points rouges) y sont dispersés dans le cytoplasme et assurent la synthèse des protéines. 
+            Les procaryotes ne disposent pas d'organites membraneux (pas de mitochondries, pas d'appareil de Golgi, etc.).
+          </p>
+          <p>
+            Cette simplicité leur permet de se reproduire rapidement et de s'adapter à divers environnements. 
+            Les bactéries en sont un exemple typique.
+          </p>
+        `
+      }
+    };
+
+    // Fonction pour charger le type de cellule choisi
+    function loadCellType() {
+      const cellType = document.getElementById('cellTypeSelector').value;
+      const container = document.getElementById('cellContainer');
+      const description = document.getElementById('description');
+      
+      // Charger le template HTML et la description correspondante
+      container.innerHTML = templates[cellType].html;
+      description.innerHTML = templates[cellType].description;
+      
+      // Ajouter les écouteurs pour les tooltips (pour eucaryote ou procaryote)
+      if (cellType === 'eukaryote') {
+        document.getElementById('nucleus').addEventListener('click', () => {
+          document.getElementById('tooltip-nucleus').classList.toggle('active');
+        });
+        document.getElementById('mito1').addEventListener('click', () => {
+          document.getElementById('tooltip-mito1').classList.toggle('active');
+        });
+        document.getElementById('mito2').addEventListener('click', () => {
+          document.getElementById('tooltip-mito2').classList.toggle('active');
+        });
+        document.getElementById('mito3').addEventListener('click', () => {
+          document.getElementById('tooltip-mito3').classList.toggle('active');
+        });
+        document.getElementById('er').addEventListener('click', () => {
+          document.getElementById('tooltip-er').classList.toggle('active');
+        });
+        document.getElementById('golgi').addEventListener('click', () => {
+          document.getElementById('tooltip-golgi').classList.toggle('active');
+        });
+      } else if (cellType === 'procaryote') {
+        document.getElementById('nucleoid').addEventListener('click', () => {
+          document.getElementById('tooltip-nucleoid').classList.toggle('active');
+        });
+        document.getElementById('ribo1').addEventListener('click', () => {
+          document.getElementById('tooltip-ribo1').classList.toggle('active');
+        });
+        document.getElementById('ribo2').addEventListener('click', () => {
+          document.getElementById('tooltip-ribo2').classList.toggle('active');
+        });
+        document.getElementById('ribo3').addEventListener('click', () => {
+          document.getElementById('tooltip-ribo3').classList.toggle('active');
+        });
+      }
+    }
+    
+    // Charger le type de cellule au démarrage
+    window.onload = loadCellType;
+    // Changer de cellule lors d'une modification du sélecteur
+    document.getElementById('cellTypeSelector').addEventListener('change', loadCellType);
+  </script>
+</body>
+</html>
